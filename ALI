@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #Name : Arch Linux Installer
-#Version : 0.7.190628
+#Version : 0.9.190630
 #Describe : A Simple Installer for Arch Linux Install which follow the official wiki indication.
 #Author : freddy4212 (freddy4212@gmail.com)
 #Website : 
@@ -25,6 +25,7 @@ mainmenu(){
 	"" "$exitchecktit" \
 	3>&1 1>&2 2>&3)
 	maincase
+	mainitem
 }
 maincase(){
 	case $selectmain in
@@ -66,6 +67,7 @@ netmenu(){
 	"" "$backmainmenutit" \
 	3>&1 1>&2 2>&3)
 	netcase
+	netitem
 }
 netcase(){
 	case $selectnet in
@@ -101,6 +103,7 @@ diskmenu(){
 	"" "$backmainmenutit" \
 	3>&1 1>&2 2>&3)
 	diskcase
+	diskitem
 }
 diskcase(){
 	case $selectdisk in
@@ -119,7 +122,6 @@ diskcase(){
 			diskmenu
 		;;
 		"3")
-			disknextitem="3"
 			selectdevtype="partition"
 			selectdevtit="$selectmounttit"
 			selectdev
@@ -144,6 +146,7 @@ confmenu(){
 	"" "$backmainmenutit" \
 	3>&1 1>&2 2>&3)
 	confcase
+	confitem
 }
 confcase(){
 	case $selectconf in
@@ -1088,6 +1091,27 @@ menuitemstart(){
 	rootpwnum="6"
 	addusrnum="7"
 	blinstallnum="8"
+}
+diskitem(){
+	disknextitem="$selectdisk"
+}
+netitem(){
+	netstar=$(echo "$selectnet" | grep -F "*")
+	if [ "$netstar" != "" ]; then
+		netnextitem="$selectnet"
+	fi
+}
+confitem(){
+	confstar=$(echo "$selectconf" | grep -F "*")
+	if [ "$confstar" != "" ]; then
+		netnextitem="$selectconf"
+	fi
+}
+mainitem(){
+	mainstar=$(echo "$selectmain" | grep -F "*")
+	if [ "$mainstar" != "" ]; then
+		netnextitem="$selectmain"
+	fi
 }
 
 #(Language)
