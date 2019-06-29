@@ -954,6 +954,53 @@ rootdir() {
 	linenum=$(mount | awk '{print $3}' | grep -n -Fx "/mnt" | awk 'BEGIN{FS=":"}NR==1{print $1}')
 	rootdir=$(mount | awk 'NR=='"$linenum"'{print$1}')
 }
+detectefi(){
+	if [ -x /sys/firmware/efi/efivars ]; then
+		bltype="uefi"
+		blmode="UEFI Mode"
+		diskmsgtxt="$diskmsguefitxt"
+		bltyinstalltit="$blinstalluefitit"
+	else
+		bltype="bios"
+		blmode="BIOS Mode"
+		diskmsgtxt="$diskmsgbiostxt"
+		bltyinstalltit="$blinstallbiostit"
+	fi
+}
+exitcheck(){
+	if [ "$progress" == "1234" ]; then
+		installgnome
+		exitrebootmsg
+		umount -l -f -q /mnt
+		clear
+		reboot
+		exit
+	else
+		exitrecheckyesno
+		if [ "$exityesno" != 0 ]; then
+			mainmenu
+			clear
+		fi
+	fi
+}
+blankcheck(){
+	if [ "$inputcontent" == "" ]; then
+		blankcheckmsg
+		blankcheck="err"
+	else
+		blankcheck="pss"
+	fi
+}
+retypecheck(){
+	if [ "$retypeone" == "$retypetwo" ]; then
+		retypecheck="pss"
+	else
+		retypecheckmsg
+		retypecheck="err"
+	fi
+}
+
+#(Progress Control)
 progresscheck(){
 	if [ "$onenum" == "1*" ]; then
 		progress="1"
@@ -1020,51 +1067,6 @@ progressaddconf(){
 		fournum="4*"
 	fi
 }
-detectefi(){
-	if [ -x /sys/firmware/efi/efivars ]; then
-		bltype="uefi"
-		blmode="UEFI Mode"
-		diskmsgtxt="$diskmsguefitxt"
-		bltyinstalltit="$blinstalluefitit"
-	else
-		bltype="bios"
-		blmode="BIOS Mode"
-		diskmsgtxt="$diskmsgbiostxt"
-		bltyinstalltit="$blinstallbiostit"
-	fi
-}
-exitcheck(){
-	if [ "$progress" == "1234" ]; then
-		installgnome
-		exitrebootmsg
-		umount -l -f -q /mnt
-		clear
-		reboot
-		exit
-	else
-		exitrecheckyesno
-		if [ "$exityesno" != 0 ]; then
-			mainmenu
-			clear
-		fi
-	fi
-}
-blankcheck(){
-	if [ "$inputcontent" == "" ]; then
-		blankcheckmsg
-		blankcheck="err"
-	else
-		blankcheck="pss"
-	fi
-}
-retypecheck(){
-	if [ "$retypeone" == "$retypetwo" ]; then
-		retypecheck="pss"
-	else
-		retypecheckmsg
-		retypecheck="err"
-	fi
-}
 nextitemstart(){
 	mainnextitem="1"
 	netnextitem="1"
@@ -1087,6 +1089,7 @@ menuitemstart(){
 	addusrnum="7"
 	blinstallnum="8"
 }
+
 #(Language)
 langenus(){
 	#Main Menu Title
