@@ -843,7 +843,7 @@ inconfmenu(){
 	3>&1 1>&2 2>&3)
 }
 mirrorcountrymenu(){
-	selectcountry=$(whiptail --backtitle "$backtit" --menu "" --nocancel --ok-button "$selectbut" --title "$mirrorcountrytit" 0 0 $(( $0 - 8 )) \
+	selectcountry=$(whiptail --backtitle "$backtit" --menu "" --nocancel --ok-button "$selectbut" --title "$mirrorcountrytit" 0 0 0 \
 	"${countryarray[@]}" \
 	3>&1 1>&2 2>&3)
 }
