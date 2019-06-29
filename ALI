@@ -14,121 +14,200 @@ backtit(){
 	backtit="Arch Linux Installer $verinfo ("$blmode")"
 }
 
-#(0 Main Menu)
+#(0 Menu Function)
 mainmenu(){
-	inmainmenu
+	progresscheck
+	selectmain=$(whiptail --backtitle "$backtit" --default-item "$mainnextitem" --menu "$mainmenutxt" --nocancel --ok-button "$enterbut" --title "$mainmenutit" 0 0 0 \
+	"$onenum" "$netmenutit" \
+	"$twonum" "$diskmenutit" \
+	"$threenum" "$installgaugetit" \
+	"$fournum" "$confmenutit" \
+	"" "$exitchecktit" \
+	3>&1 1>&2 2>&3)
+	maincase
+}
+maincase(){
 	case $selectmain in
-		"1")
-			nextitem="2"
-			subnextitem="1"
+		"1" )
 			netmenu
 			mainmenu
-		;;
-		"1*")
-			nextitem="1*"
-			subnextitem="1"
-			execagainyesno
-			if [ "$execagain" == 0 ]; then
-				netmenu
-			fi
-			mainmenu
-		;;
-		"2")
-			nextitem="3"
-			subnextitem="1"
+			;;
+		"2" )
 			diskmsg
 			diskmenu
 			mainmenu
-		;;
-		"2*")
-			nextitem="2*"
-			subnextitem="1"
-			execagainyesno
-			if [ "$execagain" == 0 ]; then
-				diskmsg
-				diskmenu
-			fi
-			mainmenu
-		;;
-		"3")
+			;;
+		"3" )
 			progresscheckinstall
 			mainmenu
-		;;
-		"3*")
-			nextitem="3*"
-			execagainyesno
-			if [ "$execagain" == 0 ]; then
-				installwholecheck
-			fi
-			mainmenu
-		;;
-		"4")
+			;;
+		"4" )
 			progresscheckconf
 			mainmenu
-		;;
-		"4*")
-			nextitem="4*"
-			subnextitem="1"
+			;;
+		"" )
+			exitcheck
+			;;
+		* )
 			execagainyesno
 			if [ "$execagain" == 0 ]; then
-				confmenu
+				selectmain=$(echo "$selectmain" | sed 's/*//')
+				maincase
+			else
+				mainmenu
 			fi
-			mainmenu
+			;;
+	esac
+}
+netmenu(){
+	selectnet=$(whiptail --backtitle "$backtit" --default-item "$netnextitem" --menu "$netmenutxt" --nocancel --ok-button "$enterbut" --title "$netmenutit""(1/5)" 0 0 0 \
+	"$setnetnum" "$setnettit" \
+	"$setmirrornum" "$setmirrortit" \
+	"" "$backmainmenutit" \
+	3>&1 1>&2 2>&3)
+	netcase
+}
+netcase(){
+	case $selectnet in
+		"1" )
+			netcheck
+			netmenu
+			;;
+		"2" )
+			mirrorcountry
+			mirrorserver
+			netmenu
+			;;
+		"" )
+			progressaddnet
+			;;
+		* )
+			execagainyesno
+			if [ "$execagain" == 0 ]; then
+				selectnet=$(echo "$selectnet" | sed 's/*//')
+				netcase
+			else
+				netmenu
+			fi
+			;;
+	esac
+}
+diskmenu(){
+	syncdiskinfo
+	selectdisk=$(whiptail --backtitle "$backtit" --default-item "$disknextitem" --menu "$diskmenutxt""$diskinfo" --nocancel --ok-button "$enterbut" --title "$diskmenutit""(2/5)" 0 0 0 \
+	"1" "$partitiondevtit" \
+	"2" "$formatdevtit" \
+	"3" "$mountdevtit" \
+	"" "$backmainmenutit" \
+	3>&1 1>&2 2>&3)
+	diskcase
+}
+diskcase(){
+	case $selectdisk in
+		"1")
+			selectdevtype="disk"
+			selectdevtit="$selectdisktit"
+			selectdev
+			selectpart
+			diskmenu
+		;;
+		"2")
+			selectdevtype="partition"
+			selectdevtit="$selectformattit"
+			selectdev
+			selectformat
+			diskmenu
+		;;
+		"3")
+			disknextitem="3"
+			selectdevtype="partition"
+			selectdevtit="$selectmounttit"
+			selectdev
+			selectmount
+			diskmenu
 		;;
 		"")
-			exitcheck
+			progressadddisk
 		;;
+	esac
+}
+confmenu(){
+	selectconf=$( whiptail --backtitle "$backtit" --default-item "$confnextitem" --menu "$confmenutxt" --nocancel --ok-button "$enterbut" --title "$confmenutit""(4/5)" 0 0 0 \
+	"$genfstabnum" "$genfstabtit" \
+	"$languagenum" "$languagetit" \
+	"$kblayoutnum" "$kblayouttit" \
+	"$timezonenum" "$timezonetit" \
+	"$hostnamenum" "$hostnametit" \
+	"$rootpwnum" "$rootpwtit" \
+	"$addusrnum" "$addusrtit" \
+	"$blinstallnum" "$bltyinstalltit" \
+	"" "$backmainmenutit" \
+	3>&1 1>&2 2>&3)
+	confcase
+}
+confcase(){
+	case $selectconf in
+		"1")
+			genfstab -U /mnt >> /mnt/etc/fstab
+			genfstabnum="1*"
+			confmenu
+			;;
+		"2")
+			language
+			confmenu
+			;;
+		"3")
+			kblayout
+			confmenu
+			;;
+		"4")
+			region
+			timezone
+			confmenu
+			;;
+		"5")
+			sethostname
+			confmenu
+			;;
+		"6")
+			rootpw
+			confmenu
+			;;
+		"7")
+			addusr
+			confmenu
+			;;
+		"8")
+			blinstall
+			confmenu
+			;;
+		"")
+			progressaddconf
+			;;
+		* )
+			execagainyesno
+			if [ "$execagain" == 0 ]; then
+				selectconf=$(echo "$selectconf" | sed 's/*//')
+				confcase
+			else
+				confmenu
+			fi
+			;;
 	esac
 }
 
 #(1 Network)
-netmenu(){
-	innetmenu
-	case $selectnet in
-		"1")
-			subnextitem="2"
-			netcheck
-			netmenu
-		;;
-		"1*")
-			subnextitem="1*"
-			execagainyesno
-			if [ "$execagain" == 0 ]; then
-				netcheck
-			fi
-			netmenu
-		;;
-		"2")
-			subnextitem=""
-			mirrorcountry
-			mirrorserver
-			netmenu
-		;;
-		"2*")
-			subnextitem="2*"
-			execagainyesno
-			if [ "$execagain" == 0 ]; then
-				mirrorcountry
-				mirrorserver
-			fi
-			netmenu
-		;;
-		"")
-			progressaddnet
-		;;
-	esac
-}
 netcheck(){
 	ping -c 5 archlinux.org > ping
 	ping=$(grep -F '5 packets transmitted, 5 received' ping)
 	rm -f ping
 	if [ "$ping" != "" ]; then
-		netokmsg
+		netmsgtxt="$netokmsgtxt" && netmsgbut="$okbut" && netmsg
 		timedatectl set-ntp true
 		setnetnum="1*"
 	else
-		neterrormsg
-		#clear
+		netmsgtxt="$neterrormsgtxt" && netmsgbut="$exitbut" && netmsg
+		clear
 		exit
 	fi
 }
@@ -163,8 +242,6 @@ mirrorserver(){
 	if [ $exitstatus == 0 ];then
 		setserver
 		setmirrornum="2*"
-	else
-		subnextitem="2"
 	fi
 }
 setserver(){
@@ -181,42 +258,9 @@ setserver(){
 }
 
 #(2 Disk)
-diskmenu(){
-	indiskmenu
-	case $selectdisk in
-		"1")
-			subnextitem="1"
-			selectdevtype="disk"
-			selectdevtit="$selectdisktit"
-			selectdev
-			cfdisk $selectdevname
-			diskmenu
-		;;
-		"2")
-			subnextitem="2"
-			selectdevtype="partition"
-			selectdevtit="$selectformattit"
-			selectdev
-			selectformat
-			diskmenu
-		;;
-		"3")
-			subnextitem="3"
-			selectdevtype="partition"
-			selectdevtit="$selectmounttit"
-			selectdev
-			selectmount
-			diskmenu
-		;;
-		"")
-			progressadddisk
-		;;
-	esac
-}
 selectdev() {
 	selectdevarray=()
-	if [ "$selectdevtype" == "disk" ]
-	then
+	if [ "$selectdevtype" == "disk" ]; then
 		items=$disklist
 		for item in $items; do
 			selectdevarray+=("$item" "")
@@ -232,6 +276,9 @@ selectdev() {
 	selectdevnum=$(echo "$selectdevname" | sed 's/[a-z]//g' | sed 's/\///g')
 	selectdevdisk=$(echo "$selectdevname" | sed 's/[0-9]//g')
 }
+selectpart(){
+	cfdisk $selectdevname
+}
 selectformat(){
 	formatdevmenu
 	if [ "$selectfs" == "ext4 (Recommend)" ]; then
@@ -246,6 +293,25 @@ selectformat(){
 			umountdev
 			formatdev
 			setdonemsgtit="$formatseldevtit""$selectdevname""$toseldevtit""$selectfs" && setdonemsg
+		fi
+	fi
+}
+selectmount(){
+	formatmount
+	if [ "$formatmount" == "pss" ];then
+		mountdevmenu
+		if [ "$selectmp" == "/ (Required)" ]; then
+			selectmp="/"
+		fi
+		if [ "$selectmp" == "/boot (ESP)" ]; then
+			selectmp="/boot"
+		fi
+		if [ "$selectmp" != "" ];then
+			if [ "$selectmp" != "DON'T Mount" ]; then
+				mountwholecheck
+			else
+				umountdev
+			fi
 		fi
 	fi
 }
@@ -290,32 +356,6 @@ formatdev(){
 		;;
 	esac
 }
-setpartflag(){
-	echo "t
-	$selectdevnum
-	$flag
-	w
-	" | fdisk $selectdevdisk
-}
-selectmount(){
-	formatmount
-	if [ "$formatmount" == "pss" ];then
-		mountdevmenu
-		if [ "$selectmp" == "/ (Required)" ]; then
-			selectmp="/"
-		fi
-		if [ "$selectmp" == "/boot (ESP)" ]; then
-			selectmp="/boot"
-		fi
-		if [ "$selectmp" != "" ];then
-			if [ "$selectmp" != "DON'T Mount" ]; then
-				mountwholecheck
-			else
-				umountdev
-			fi
-		fi
-	fi
-}
 mountdev(){
 	case $selectmp in
 		"/")
@@ -355,6 +395,13 @@ mountdev(){
 			setpartflag
 		;;
 	esac
+}
+setpartflag(){
+	echo "t
+	$selectdevnum
+	$flag
+	w
+	" | fdisk $selectdevdisk
 }
 umountdev() {
 	if [ "$(lsblk -f $selectdevname | awk 'NR==2{print $4}')" == "[SWAP]" ]; then
@@ -428,21 +475,14 @@ installwholecheck() {
 			bootcheck
 			if [ "$bootcheck" == "pss" ]; then
 				installsystem
-			else
-				nextitem="2*"
 			fi
-		else
-			nextitem="2*"
 		fi
-	else
-		nextitem="2*"
 	fi
 }
 rootcheck(){
 	if [ "$linenum" == "" ]; then
 		installmsgtxt="$rootcheckmsgtxt" && installmsg
 		rootcheck="err"
-		nextitem="2*"
 	else
 		rootcheck="pss"
 	fi
@@ -452,7 +492,6 @@ sizecheck(){
 	if [ "$rootsize" -lt "4294967296" ]; then
 		installmsgtxt="$sizecheckmsgtxt" && installmsg
 		sizecheck="err"
-		nextitem="2*"
 	else
 		sizecheck="pss"
 	fi
@@ -463,7 +502,6 @@ bootcheck(){
 		if [ "$bootlinenum" == "" ] || [ "$diskfs" != "vfat" ]; then
 			installmsgtxt="$bootcheckmsgtxt" && installmsg
 			bootcheck="err"
-			nextitem="2*"
 		else
 			bootcheck="pss"
 		fi
@@ -474,7 +512,6 @@ bootcheck(){
 		if [ "$grubreservedcheck" == "" ];then
 			installmsgtxt="$bootcheckmsgtxt" && installmsg
 			bootcheck="err"
-			nextitem="2*"
 		else
 			bootcheck="pss"
 		fi
@@ -488,126 +525,9 @@ installsystem(){
 	onenum="1*"
 	twonum="2*"
 	threenum="3*"
-	progress="123"
 }
 
 #(4 Configure)
-confmenu(){
-	inconfmenu
-	case $selectconf in
-		"1")
-			subnextitem="2"
-			genfstab -U /mnt >> /mnt/etc/fstab
-			genfstabnum="1*"
-			confmenu
-		;;
-		"1*")
-			subnextitem="1*"
-			execagainyesno
-			if [ "$execagain" == 0 ]; then
-				genfstab -U /mnt >> /mnt/etc/fstab
-				genfstabnum="1*"
-			fi
-			confmenu
-		;;
-		"2")
-			subnextitem="3"
-			language
-			confmenu
-		;;
-		"2*")
-			subnextitem="2*"
-			execagainyesno
-			if [ "$execagain" == 0 ]; then
-				language
-			fi
-			confmenu
-		;;
-		"3")
-			subnextitem="4"
-			kblayout
-			confmenu
-		;;
-		"3*")
-			subnextitem="3*"
-			execagainyesno
-			if [ "$execagain" == 0 ]; then
-				kblayout
-			fi
-			confmenu
-		;;
-		"4")
-			subnextitem="5"
-			region
-			timezone
-			confmenu
-		;;
-		"4*")
-			subnextitem="4*"
-			execagainyesno
-			if [ "$execagain" == 0 ]; then
-				region
-				timezone
-			fi
-			confmenu
-		;;
-		"5")
-			subnextitem="6"
-			sethostname
-			confmenu
-		;;
-		"5*")
-			subnextitem="5*"
-			execagainyesno
-			if [ "$execagain" == 0 ]; then
-				sethostname
-			fi
-			confmenu
-		;;
-		"6")
-			subnextitem="7"
-			rootpw
-			confmenu
-		;;
-		"6*")
-			subnextitem="6*"
-			execagainyesno
-			if [ "$execagain" == 0 ]; then
-				rootpw
-			fi
-			confmenu
-		;;
-		"7")
-			subnextitem="8"
-			addusr
-			confmenu
-		;;
-		"7*")
-			subnextitem="7*"
-			execagainyesno
-			if [ "$execagain" == 0 ]; then
-				addusr
-			fi
-			confmenu
-		;;
-		"8")
-			subnextitem=""
-			blinstall
-			confmenu
-		;;
-		"8*")
-			subnextitem="8*"
-			execagainyesno
-			if [ "$execagain" == 0 ]; then
-				blinstall
-			fi
-			confmenu
-		;;
-		"")
-			progressaddconf
-		;;
-	esac
-}
 language(){
 	ls /usr/share/i18n/locales  -l |awk '{print $9}' > language
 	languagearray=()
@@ -620,8 +540,6 @@ language(){
 	if [ $exitstatus == 0 ];then
 		setlanguage
 		languagenum="2*"
-	else
-		subnextitem="2"
 	fi
 }
 setlanguage(){
@@ -642,8 +560,6 @@ kblayout(){
 	if [ $exitstatus == 0 ];then
 		echo "KEYMAP=""$selectkblayout" > /mnt/etc/vconsole.conf
 		kblayoutnum="3*"
-	else
-		subnextitem="3"
 	fi
 }
 region(){
@@ -668,8 +584,6 @@ timezone(){
 	if [ $exitstatus == 0 ];then
 		settimezone
 		timezonenum="4*"
-	else
-		subnextitem="4"
 	fi
 }
 settimezone(){
@@ -686,12 +600,7 @@ sethostname(){
 			arch-chroot /mnt systemctl enable dhcpcd
 			setdonemsgtit="$hostnametit" && setdonemsg
 			hostnamenum="5*"
-			subnextitem="6"
-		else
-			subnextitem="5"
 		fi
-	else
-		subnextitem="5"
 	fi
 }
 rootpw(){
@@ -708,15 +617,8 @@ rootpw(){
 				echo "root:$inputrootpw" | arch-chroot /mnt chpasswd
 				setdonemsgtit="$rootpwtit" && setdonemsg
 				rootpwnum="6*"
-				subnextitem="7"
-			else
-				subnextitem="6"
 			fi
-		else
-			subnextitem="6"
 		fi
-	else
-		subnextitem="6"
 	fi
 }
 addusr(){
@@ -728,14 +630,8 @@ addusr(){
 			usrexistcheck
 			if [ "$usrexistcheck" == "pss" ]; then
 				usrpw
-			else
-				subnextitem="7"
 			fi
-		else
-			subnextitem="7"
 		fi
-	else
-		subnextitem="7"
 	fi
 }
 usrexistcheck(){
@@ -765,15 +661,8 @@ usrpw(){
 				echo "$inputusrname:$inputusrpw" | arch-chroot /mnt chpasswd
 				setdonemsgtit="$addusrtit" && setdonemsg
 				addusrnum="7*"
-				subnextitem="8"
-			else
-				subnextitem="7"
 			fi
-		else
-			subnextitem="7"
 		fi
-	else
-		subnextitem="7"
 	fi
 }
 blinstall(){
@@ -803,45 +692,6 @@ blinstall(){
 }
 
 #(Menu)
-inmainmenu(){
-	selectmain=$(whiptail --backtitle "$backtit" --default-item "$nextitem" --menu "$mainmenutxt" --nocancel --ok-button "$enterbut" --title "$mainmenutit" 0 0 0 \
-	"$onenum" "$netmenutit" \
-	"$twonum" "$diskmenutit" \
-	"$threenum" "$installgaugetit" \
-	"$fournum" "$confmenutit" \
-	"" "$exitchecktit" \
-	3>&1 1>&2 2>&3)
-	progresscheck
-}
-innetmenu(){
-	selectnet=$(whiptail --backtitle "$backtit" --default-item "$subnextitem" --menu "$netmenutxt" --nocancel --ok-button "$enterbut" --title "$netmenutit""(1/5)" 0 0 0 \
-	"$setnetnum" "$setnettit" \
-	"$setmirrornum" "$setmirrortit" \
-	"" "$backmainmenutit" \
-	3>&1 1>&2 2>&3)
-}
-indiskmenu(){
-	syncdiskinfo
-	selectdisk=$(whiptail --backtitle "$backtit" --default-item "$subnextitem" --menu "$diskmenutxt""$diskinfo" --nocancel --ok-button "$enterbut" --title "$diskmenutit""(2/5)" 0 0 0 \
-	"1" "$partitiondevtit" \
-	"2" "$formatdevtit" \
-	"3" "$mountdevtit" \
-	"" "$backmainmenutit" \
-	3>&1 1>&2 2>&3)
-}
-inconfmenu(){
-	selectconf=$( whiptail --backtitle "$backtit" --default-item "$subnextitem" --menu "$confmenutxt" --nocancel --ok-button "$enterbut" --title "$confmenutit""(4/5)" 0 0 0 \
-	"$genfstabnum" "$genfstabtit" \
-	"$languagenum" "$languagetit" \
-	"$kblayoutnum" "$kblayouttit" \
-	"$timezonenum" "$timezonetit" \
-	"$hostnamenum" "$hostnametit" \
-	"$rootpwnum" "$rootpwtit" \
-	"$addusrnum" "$addusrtit" \
-	"$blinstallnum" "$bltyinstalltit" \
-	"" "$backmainmenutit" \
-	3>&1 1>&2 2>&3)
-}
 mirrorcountrymenu(){
 	selectcountry=$(whiptail --backtitle "$backtit" --menu "" --nocancel --ok-button "$selectbut" --title "$mirrorcountrytit" 0 0 0 \
 	"${countryarray[@]}" \
@@ -904,15 +754,14 @@ timezonemenu(){
 	exitstatus=$?
 }
 
-#(Good Message Box)
+#(Message Box)
 welcomemsg(){
 	whiptail \
 	--backtitle "$backtit" --msgbox "$welcomemsgtxt" --ok-button "$okbut" --title "$welcomemsgtit" 0 0
-	nextitem="1"
 }
-netokmsg(){
+netmsg(){
 	whiptail \
-	--backtitle "$backtit" --msgbox "$netokmsgtxt" --ok-button "$okbut" --title "$setnettit" 0 0
+	--backtitle "$backtit" --msgbox "$netmsgtxt" --ok-button "$netmsgbut" --title "$setnettit" 0 0
 }
 diskmsg(){
 	whiptail \
@@ -934,15 +783,9 @@ exitrebootmsg(){
 	whiptail \
 	--backtitle "$backtit" --msgbox "$exitrebootmsgtxt" --ok-button "$rebootbut" --title "$exitchecktit" 0 0
 }
-
-#(Bad Message Box)
 progresscheckmsg(){
 	whiptail \
 	--backtitle "$backtit" --msgbox "$progresscheckmsgtxt" --ok-button "$okbut" --title "$progresscheckmsgtit" 0 0
-}
-neterrormsg(){
-	whiptail \
-	--backtitle "$backtit" --msgbox "$neterrormsgtxt" --ok-button "$exitbut" --title "$setnettit" 0 0
 }
 mountmsg(){
 	whiptail \
@@ -1097,18 +940,15 @@ syncdiskinfo(){
 	sed -i 's/\/mnt/\/mnt\//g' diskinfo
 	sed -i 's/\/\//\//g' diskinfo
 	sed -i 's/\/mnt//g' diskinfo
-	setdiskinfo
+	diskinfo=$(cat diskinfo)
+	disklist=$(cat disklist)
+	partitionlist=$(cat partitionlist)
+	canboot=$(cat canboot)
 	rm -f diskinfo
 	rm -f disklist
 	rm -f partitionlist
 	rm -f diskallpart
 	rm -f canboot
-}
-setdiskinfo(){
-	diskinfo=$(cat diskinfo)
-	disklist=$(cat disklist)
-	partitionlist=$(cat partitionlist)
-	canboot=$(cat canboot)
 }
 rootdir() {
 	linenum=$(mount | awk '{print $3}' | grep -n -Fx "/mnt" | awk 'BEGIN{FS=":"}NR==1{print $1}')
@@ -1134,36 +974,31 @@ progresscheck(){
 progresscheckinstall(){
 	case $progress in
 		"1")
-			progresscheckmsgtxt="$progresscheckdiskmsgtxt"
-			progresscheckmsg
-			nextitem="2"
+			progresscheckmsgtxt="$progresscheckdiskmsgtxt" && progresscheckmsg
 		;;
 		"2")
-			progresscheckmsgtxt="$progresschecknetmsgtxt"
-			progresscheckmsg
-			nextitem="1"
+			progresscheckmsgtxt="$progresschecknetmsgtxt" && progresscheckmsg
 		;;
 		"12")
-			nextitem="4"
 			installwholecheck
 		;;
 		"")
-			progresscheckmsgtxt="$progresschecknetdiskmsgtxt"
-			progresscheckmsg
-			nextitem="1"
+			progresscheckmsgtxt="$progresschecknetdiskmsgtxt" && progresscheckmsg
 		;;
 	esac
 }
 progresscheckconf(){
-	if [ "$progress" == "123" ] || [ "$progress" == "1234" ]; then
-		nextitem=""
-		subnextitem="1"
-		confmenu
-	else
-		progresscheckmsgtxt="$progresscheckmsgconftxt"
-		progresscheckmsg
-		nextitem="3"
-	fi
+	case $progress in
+		"123")
+			confmenu
+		;;
+		"1234")
+			confmenu
+		;;
+		*)
+			progresscheckmsgtxt="$progresscheckmsgconftxt" && progresscheckmsg
+		;;
+	esac
 }
 progressaddnet(){
 	if [ "$setnetnum" == "1*" ] && [ "$setmirrornum" == "2*" ]; then
@@ -1203,15 +1038,14 @@ exitcheck(){
 		installgnome
 		exitrebootmsg
 		umount -l -f -q /mnt
-		#clear
+		clear
 		reboot
 		exit
 	else
 		exitrecheckyesno
 		if [ "$exityesno" != 0 ]; then
-			nextitem=""
 			mainmenu
-			#clear
+			clear
 		fi
 	fi
 }
@@ -1231,21 +1065,40 @@ retypecheck(){
 		retypecheck="err"
 	fi
 }
-
+nextitemstart(){
+	mainnextitem="1"
+	netnextitem="1"
+	disknextitem=""
+	confnextitem="1"
+}
+menuitemstart(){
+	onenum="1"
+	twonum="2"
+	threenum="3"
+	fournum="4"
+	setnetnum="1"
+	setmirrornum="2"
+	genfstabnum="1"
+	languagenum="2"
+	kblayoutnum="3"
+	timezonenum="4"
+	hostnamenum="5"
+	rootpwnum="6"
+	addusrnum="7"
+	blinstallnum="8"
+}
 #(Language)
 langenus(){
 	#Main Menu Title
 	mainmenutit="Main Menu"
 	netmenutit="Network Setting"
 	diskmenutit="Disk Partition"
-	installgaugetit="System Installation"
 	confmenutit="System Configuration"
 
 	#Main Menu Text
 	mainmenutxt="Please select an item to execution.\n* means this item had been exectuted."
 	netmenutxt="This part will help you done the network and mirror server settings.\n* means this item had been exectuted."
 	diskmenutxt="This part will help you partition the disks, format the partitions and mount them.\nList of the available disk and partitions:\n\n	[List Items]	[Size]  	[Format]        	[Mount Point]   \n"
-	installgaugetxt="Please wait while installation in progress..."
 	confmenutxt="This part will help you done the localization and personalize settings.\n* means this item had been exectuted."
 
 	#Network Title
@@ -1281,10 +1134,11 @@ langenus(){
 	grubmountmsgtxt="You can't use a GRUB Reserved partition as a mount point."
 
 	#Install Title
+	installgaugetit="System Installation"
 	installerrormsgtit="Install Error"
 	
-
 	#Install Text
+	installgaugetxt="Please wait while installation in progress..."
 	rootcheckmsgtxt="The / mount point is required for system installation."
 	sizecheckmsgtxt="System installation requires at least 4.5 GiB of free space."
 	bootcheckmsgtxt="You haven't set the boot partition or GRUB Reserved."
@@ -1350,7 +1204,6 @@ langenus(){
 	retypecheckmsgtxt="The passwords entered twice are different."
 	usrexistcheckmsgtxt="The user name is exist."
 
-
 	setdonemsgtxt="Done."
 
 	#Info Text
@@ -1376,22 +1229,6 @@ langenus(){
 	yesbut="Yes"
 	nobut="No"
 	rebootbut="Reboot"
-
-	#Numbers
-	onenum="1"
-	twonum="2"
-	threenum="3"
-	fournum="4"
-	setnetnum="1"
-	setmirrornum="2"
-	genfstabnum="1"
-	languagenum="2"
-	kblayoutnum="3"
-	timezonenum="4"
-	hostnamenum="5"
-	rootpwnum="6"
-	addusrnum="7"
-	blinstallnum="8"
 }
 
 #Gnome
@@ -1418,4 +1255,6 @@ langenus
 detectefi
 backtit
 welcomemsg
+menuitemstart
+nextitemstart
 mainmenu
