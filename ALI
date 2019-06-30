@@ -24,8 +24,8 @@ mainmenu(){
 	"$fournum" "$confmenutit" \
 	"" "$exitchecktit" \
 	3>&1 1>&2 2>&3)
-	maincase
 	mainitem
+	maincase
 }
 maincase(){
 	case $selectmain in
@@ -66,8 +66,8 @@ netmenu(){
 	"$setmirrornum" "$setmirrortit" \
 	"" "$backmainmenutit" \
 	3>&1 1>&2 2>&3)
-	netcase
 	netitem
+	netcase
 }
 netcase(){
 	case $selectnet in
@@ -102,35 +102,35 @@ diskmenu(){
 	"3" "$mountdevtit" \
 	"" "$backmainmenutit" \
 	3>&1 1>&2 2>&3)
-	diskcase
 	diskitem
+	diskcase
 }
 diskcase(){
 	case $selectdisk in
-		"1")
+		"1" )
 			selectdevtype="disk"
 			selectdevtit="$selectdisktit"
 			selectdev
-			selectpart
+			cfdisk $selectdevname
 			diskmenu
-		;;
-		"2")
+			;;
+		"2" )
 			selectdevtype="partition"
 			selectdevtit="$selectformattit"
 			selectdev
 			selectformat
 			diskmenu
-		;;
-		"3")
+			;;
+		"3" )
 			selectdevtype="partition"
 			selectdevtit="$selectmounttit"
 			selectdev
 			selectmount
 			diskmenu
-		;;
-		"")
-			progressadddisk
-		;;
+			;;
+		"" )
+			twonum="2*"
+			;;
 	esac
 }
 confmenu(){
@@ -145,46 +145,45 @@ confmenu(){
 	"$blinstallnum" "$bltyinstalltit" \
 	"" "$backmainmenutit" \
 	3>&1 1>&2 2>&3)
-	confcase
 	confitem
+	confcase
 }
 confcase(){
 	case $selectconf in
-		"1")
-			genfstab -U /mnt >> /mnt/etc/fstab
-			genfstabnum="1*"
+		"1" )
+			makefstab
 			confmenu
 			;;
-		"2")
+		"2" )
 			language
 			confmenu
 			;;
-		"3")
+		"3" )
 			kblayout
 			confmenu
 			;;
-		"4")
+		"4" )
 			region
 			timezone
 			confmenu
 			;;
-		"5")
+		"5" )
 			sethostname
 			confmenu
 			;;
-		"6")
+		"6" )
 			rootpw
 			confmenu
 			;;
-		"7")
+		"7" )
 			addusr
 			confmenu
 			;;
-		"8")
+		"8" )
 			blinstall
 			confmenu
 			;;
-		"")
+		"" )
 			progressaddconf
 			;;
 		* )
@@ -278,9 +277,6 @@ selectdev() {
 	selectdevname=$(echo "$selectdevname")
 	selectdevnum=$(echo "$selectdevname" | sed 's/[a-z]//g' | sed 's/\///g')
 	selectdevdisk=$(echo "$selectdevname" | sed 's/[0-9]//g')
-}
-selectpart(){
-	cfdisk $selectdevname
 }
 selectformat(){
 	formatdevmenu
@@ -478,8 +474,14 @@ installwholecheck() {
 			bootcheck
 			if [ "$bootcheck" == "pss" ]; then
 				installsystem
+			else
+				mainnextitem="2*"
 			fi
+		else
+			mainnextitem="2*"
 		fi
+	else
+		mainnextitem="2*"
 	fi
 }
 rootcheck(){
@@ -531,6 +533,10 @@ installsystem(){
 }
 
 #(4 Configure)
+makefstab(){
+	genfstab -U /mnt >> /mnt/etc/fstab
+	genfstabnum="1*"
+}
 language(){
 	ls /usr/share/i18n/locales  -l |awk '{print $9}' > language
 	languagearray=()
@@ -543,6 +549,8 @@ language(){
 	if [ $exitstatus == 0 ];then
 		setlanguage
 		languagenum="2*"
+	else
+		confnextitem="2"
 	fi
 }
 setlanguage(){
@@ -563,6 +571,8 @@ kblayout(){
 	if [ $exitstatus == 0 ];then
 		echo "KEYMAP=""$selectkblayout" > /mnt/etc/vconsole.conf
 		kblayoutnum="3*"
+	else
+		confnextitem="3"
 	fi
 }
 region(){
@@ -587,6 +597,8 @@ timezone(){
 	if [ $exitstatus == 0 ];then
 		settimezone
 		timezonenum="4*"
+	else
+		confnextitem="4"
 	fi
 }
 settimezone(){
@@ -603,7 +615,11 @@ sethostname(){
 			arch-chroot /mnt systemctl enable dhcpcd
 			setdonemsgtit="$hostnametit" && setdonemsg
 			hostnamenum="5*"
+		else
+			confnextitem="5"
 		fi
+	else
+		confnextitem="5"
 	fi
 }
 rootpw(){
@@ -620,8 +636,14 @@ rootpw(){
 				echo "root:$inputrootpw" | arch-chroot /mnt chpasswd
 				setdonemsgtit="$rootpwtit" && setdonemsg
 				rootpwnum="6*"
+			else
+				confnextitem="6"
 			fi
+		else
+			confnextitem="6"
 		fi
+	else
+		confnextitem="6"
 	fi
 }
 addusr(){
@@ -633,8 +655,14 @@ addusr(){
 			usrexistcheck
 			if [ "$usrexistcheck" == "pss" ]; then
 				usrpw
+			else
+				confnextitem="7"
 			fi
+		else
+			confnextitem="7"
 		fi
+	else
+		confnextitem="7"
 	fi
 }
 usrexistcheck(){
@@ -664,8 +692,14 @@ usrpw(){
 				echo "$inputusrname:$inputusrpw" | arch-chroot /mnt chpasswd
 				setdonemsgtit="$addusrtit" && setdonemsg
 				addusrnum="7*"
+			else
+				confnextitem="7"
 			fi
+		else
+			confnextitem="7"
 		fi
+	else
+		confnextitem="7"
 	fi
 }
 blinstall(){
@@ -1025,44 +1059,38 @@ progresscheckinstall(){
 	case $progress in
 		"1")
 			progresscheckmsgtxt="$progresscheckdiskmsgtxt" && progresscheckmsg
-		;;
+			mainnextitem="2"
+			;;
 		"2")
 			progresscheckmsgtxt="$progresschecknetmsgtxt" && progresscheckmsg
-		;;
+			mainnextitem="1"
+			;;
 		"12")
 			installwholecheck
-		;;
+			;;
 		"")
 			progresscheckmsgtxt="$progresschecknetdiskmsgtxt" && progresscheckmsg
-		;;
+			mainnextitem="1"
+			;;
 	esac
 }
 progresscheckconf(){
 	case $progress in
 		"123")
 			confmenu
-		;;
+			;;
 		"1234")
 			confmenu
-		;;
+			;;
 		*)
 			progresscheckmsgtxt="$progresscheckmsgconftxt" && progresscheckmsg
-		;;
+			mainnextitem="3"
+			;;
 	esac
 }
 progressaddnet(){
 	if [ "$setnetnum" == "1*" ] && [ "$setmirrornum" == "2*" ]; then
 		onenum="1*"
-	fi
-}
-progressadddisk(){
-	twonum="2*"
-}
-progressaddinstall(){
-	if [ "$setnetnum" == "1*" ] && [ "$setmirrornum" == "2*" ]; then
-		onenum="1*"
-		twonum="2*"
-		threenum="3*"
 	fi
 }
 progressaddconf(){
@@ -1096,21 +1124,90 @@ diskitem(){
 	disknextitem="$selectdisk"
 }
 netitem(){
-	netstar=$(echo "$selectnet" | grep -F "*")
-	if [ "$netstar" != "" ]; then
-		netnextitem="$selectnet"
+	#空白處理與重新進入時的第一項目
+	newnetarray=()
+	netarray=("$setnetnum" "$setmirrornum")
+	if [ "$selectnet" == "" ];then
+		n=0
+		for (( i=0; i<${#netarray[@]}; i++ )); do
+			netstar=$(echo "${netarray[$i]}" | grep -F "*")
+			if [ "$netstar" == "" ]; then
+				newnetarray[$n]=${netarray[$i]}
+				(( n++ ))
+			fi
+		done
+		netnextitem="${newnetarray[0]}"
+	else
+		#是星號就保留同項
+		netstar=$(echo "$selectnet" | grep -F "*")
+		if [ "$netstar" != "" ]; then
+			netnextitem="$selectnet"
+		else
+			#不是星號自動進位
+			netnextitem=$(($selectnet + 1))
+			nextnetstar=$(echo ${netarray[$(($netnextitem - 1))]} | grep -F "*")
+			if [ "$nextnetstar" != "" ]; then
+				netnextitem="$netnextitem""*"
+			fi
+			nostar=$(echo $netnextitem | sed 's/*//')
+			if [ "$nostar" -gt "2" ]; then
+				netnextitem=""
+			fi
+			#下一項是否有*
+			#下一項是否有是空格
+		fi
 	fi
 }
 confitem(){
-	confstar=$(echo "$selectconf" | grep -F "*")
-	if [ "$confstar" != "" ]; then
-		netnextitem="$selectconf"
+	newconfarray=()
+	confarray=("$genfstabnum" "$languagenum" "$kblayoutnum" "$timezonenum" "$hostnamenum" "$rootpwnum" "$addusrnum" "$blinstallnum")
+	if [ "$selectconf" == "" ];then
+		n=0
+		for (( i=0; i<${#confarray[@]}; i++ )); do
+			confstar=$(echo "${confarray[$i]}" | grep -F "*")
+			if [ "$confstar" == "" ]; then
+				newconfarray[$n]=${confarray[$i]}
+				(( n++ ))
+			fi
+		done
+		confnextitem="${newconfarray[0]}"
+	else
+		confstar=$(echo "$selectconf" | grep -F "*")
+		if [ "$confstar" != "" ]; then
+			confnextitem="$selectconf"
+		else
+			confnextitem=$(($selectconf + 1))
+			nextconfstar=$(echo ${confarray[$(($confnextitem - 1))]} | grep -F "*")
+			if [ "$nextconfstar" != "" ]; then
+				confnextitem="$confnextitem""*"
+			fi
+			nostar=$(echo $confnextitem | sed 's/*//')
+			if [ "$nostar" -gt "8" ]; then
+				confnextitem=""
+			fi
+		fi
 	fi
 }
 mainitem(){
-	mainstar=$(echo "$selectmain" | grep -F "*")
-	if [ "$mainstar" != "" ]; then
-		netnextitem="$selectmain"
+	newmainarray=()
+	mainarray=("$onenum" "$twonum" "$threenum" "$fournum")
+	if [ "$selectmain" == "" ];then
+		mainnextitem=""
+	else
+		mainstar=$(echo "$selectmain" | grep -F "*")
+		if [ "$mainstar" != "" ]; then
+			mainnextitem="$selectmain"
+		else
+			mainnextitem=$(($selectmain + 1))
+			nextmainstar=$(echo ${mainarray[$(($mainnextitem - 1))]} | grep -F "*")
+			if [ "$nextmainstar" != "" ]; then
+				mainnextitem="$mainnextitem""*"
+			fi
+			nostar=$(echo $mainnextitem | sed 's/*//')
+			if [ "$nostar" -gt "4" ]; then
+				mainnextitem=""
+			fi
+		fi
 	fi
 }
 
