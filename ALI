@@ -200,7 +200,8 @@ confcase(){
 
 #(1 Network)
 netcheck(){
-	ping -c 5 archlinux.org > ping
+	#進度列
+	ping -c 5 archlinux.org > ping | netcheckinfo
 	ping=$(grep -F '5 packets transmitted, 5 received' ping)
 	rm -f ping
 	if [ "$ping" != "" ]; then
@@ -290,7 +291,7 @@ selectformat(){
 		formatcheckyesno
 		if [ "$formatcheck" == 0 ]; then
 			umountdev
-			formatdev
+			formatdev > /dev/null 2>&1 | formatinginfo
 			setdonemsgtit="$formatseldevtit""$selectdevname""$toseldevtit""$selectfs" && setdonemsg
 		fi
 	fi
@@ -315,6 +316,7 @@ selectmount(){
 	fi
 }
 formatdev(){
+	#進度列
 	case $selectfs in
 		"btrfs")
 			mkfs.btrfs -f $selectdevname
@@ -354,6 +356,7 @@ formatdev(){
 			setpartflag
 		;;
 	esac
+	sleep 1
 }
 mountdev(){
 	case $selectmp in
@@ -466,6 +469,7 @@ grubmount(){
 
 #(3 Install)
 installwholecheck() {
+	#進度列
 	rootdir
 	rootcheck
 	if [ "$rootcheck" == "pss" ]; then
@@ -523,6 +527,7 @@ bootcheck(){
 	fi
 }
 installsystem(){
+	#進度列
 	installstartmsg
 	pacstrap /mnt base base-devel
 	arch-chroot /mnt pacman -Scc --noconfirm
@@ -547,13 +552,14 @@ language(){
 	done
 	languagemenu
 	if [ $exitstatus == 0 ];then
-		setlanguage
+		setlanguage > /dev/null 2>&1 | setlanginfo
 		languagenum="2*"
 	else
 		confnextitem="2"
 	fi
 }
 setlanguage(){
+	#進度列
 	arch-chroot /mnt sed -i 's/#en_US.UTF-8/en_US.UTF-8/g' /etc/locale.gen
 	arch-chroot /mnt sed -i 's/#'"$selectlanguage"'.UTF-8/'"$selectlanguage"'.UTF-8/g' /etc/locale.gen
 	echo "LANG=""$selectlanguage"".UTF-8" > /mnt/etc/locale.conf
@@ -703,6 +709,7 @@ usrpw(){
 	fi
 }
 blinstall(){
+	#進度列
 	if [ "$bltype" == "uefi" ]; then
 		arch-chroot /mnt bootctl --path=/boot install
 		cp -f /usr/share/systemd/bootctl/arch.conf /mnt/boot/loader/entries
@@ -892,8 +899,29 @@ retypeusrpwinpbx(){
 	3>&1 1>&2 2>&3)
 }
 
+#(Info box)
+netcheckinfo(){
+	whiptail --backtitle "$backtit" --infobox "$detectnetworkinfo" 7 0
+}
+formatinginfo(){
+	whiptail --backtitle "$backtit" --infobox "$formatdiskinfo""$selectdevname""$formatdiskinfotwo""$selectfs""$formatdiskinfothree" 7 0
+}
+#loaddiskinfo(){
+#	whiptail --backtitle "$backtit" --infobox "$loaddiskinfo" 7 0
+#}
+#installblinfo(){
+#	whiptail --backtitle "$backtit" --infobox "$installblinfo" 7 0
+#}
+setlanginfo(){
+	whiptail --backtitle "$backtit" --infobox "$setlanginfo" 7 0
+}
+#installinginfo(){
+#	whiptail --backtitle "$backtit" --infobox "$installgaugetxt" 7 0
+#}
+
 #(Other)
 syncdiskinfo(){
+	#進度列
 	#Disk List
 	ls /dev/[sh]d* -l |awk '{print $10}' > disk
 	sed -i 's/[0-9]//g' disk
@@ -1331,17 +1359,13 @@ langenus(){
 	setdonemsgtxt="Done."
 
 	#Info Text
-	loaddiskinfo="Loading the partitions..."
+	loaddiskinfo="Syncing the partitions..."
 	formatdiskinfo="Formating "
 	formatdiskinfotwo=" to "
 	formatdiskinfothree=" ..."
-	checkinstallinfo="Checking the partitions..."
-	loadlistinfo="Loading the list..."
 	detectnetworkinfo="Detecting the network..."
-	installblinfo="Installing the boot loader to "
-	installblinfotwo=" ..."
+	installblinfo="Installing the boot loader..."
 	setlanginfo="Setting the language..."
-	genfstabinfo="Generating the fstab file..."
 
 	#Buttons
 	enterbut="Enter"
@@ -1357,6 +1381,7 @@ langenus(){
 
 #Gnome
 installgnome(){
+	#進度列
 	wantgnome=$( whiptail --backtitle "$backtit" --defaultno --no-button "$nobut" --title "Install the Gnome Desktop Environment" --yesno "Do you want to install the Gnome Desktop Environment ?" --yes-button "$yesbut" 0 0 \
 	3>&1 1>&2 2>&3 value=$?)
 	wantgnome=$?
